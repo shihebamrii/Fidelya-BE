@@ -27,8 +27,7 @@ coverage/
 # Build/Dist
 dist/
 build/
-scripts/output/
-
+scripts/*
 # Misc
 *.tgz
 .npm
