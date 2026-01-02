@@ -84,12 +84,38 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Health check endpoint
+// Middleware to ensure DB connection (Lazy connection for serverless)
+let dbConnected = false;
+app.use(async (req, res, next) => {
+  if (req.path === '/healthz') return next();
+  
+  if (!dbConnected) {
+    try {
+      await connectDB();
+      dbConnected = true;
+      next();
+    } catch (error) {
+      logger.error('Database connection failed in middleware:', error);
+      // Don't call next(error) if we want to custom handle or just let it time out
+      // On Vercel, it's better to report the error properly
+      res.status(503).json({
+        status: 'error',
+        message: 'Service Temporarily Unavailable (Database Connection Failed)',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  } else {
+    next();
+  }
+});
+
+// Health check endpoint (moved up to avoid DB dependency for basic health)
 app.get('/healthz', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    dbConnected
   });
 });
 
@@ -105,31 +131,25 @@ app.use(notFoundHandler);
 // Error handler
 app.use(errorHandler);
 
-// Start server function
+// Start server function (for local dev)
 const startServer = async () => {
-  try {
-    // Connect to database
-    await connectDB();
-
-    // Only start listening if not running as a Vercel function
-    // Vercel handles the listening part for exported apps
-    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    try {
+      await connectDB();
+      dbConnected = true;
       const PORT = process.env.PORT || 4000;
       app.listen(PORT, () => {
         logger.info(`Server running on port ${PORT}`);
         logger.info(`API Docs available at http://localhost:${PORT}/api-docs`);
       });
-    }
-  } catch (error) {
-    logger.error('Failed to start server:', error);
-    // On Vercel, we don't want to process.exit(1) as it kills the lambda instance
-    if (!process.env.VERCEL) {
+    } catch (error) {
+      logger.error('Failed to start server:', error);
       process.exit(1);
     }
   }
 };
 
-// Execute startServer
+// Execute startServer (won't block export)
 startServer();
 
 export default app;
