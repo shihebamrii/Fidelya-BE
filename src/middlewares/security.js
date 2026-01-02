@@ -30,13 +30,27 @@ const securityMiddleware = () => {
       if (!origin) return callback(null, true);
       
       const allowedOrigins = process.env.NODE_ENV === 'production'
-        ? process.env.ALLOWED_ORIGINS?.split(',') || []
+        ? (process.env.ALLOWED_ORIGINS?.split(',') || ['https://fidelya-roan.vercel.app'])
         : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4000']; 
 
-      if (allowedOrigins.indexOf(origin) !== -1 || !allowedOrigins.length && process.env.NODE_ENV !== 'production') {
+      // Support wildcard/subdomain matching or exact match
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (allowedOrigin === '*') return true;
+        if (allowedOrigin === origin) return true;
+        // Basic regex for subdomain support if someone enters *.vercel.app
+        if (allowedOrigin.includes('*')) {
+          const regex = new RegExp('^' + allowedOrigin.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$');
+          return regex.test(origin);
+        }
+        return false;
+      });
+
+      if (isAllowed) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        // Instead of error, we can just say no, but returning an empty callback 
+        // usually prevents the Access-Control-Allow-Origin header from being set
+        callback(null, false);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

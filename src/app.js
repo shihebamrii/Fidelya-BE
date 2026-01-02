@@ -105,37 +105,31 @@ app.use(notFoundHandler);
 // Error handler
 app.use(errorHandler);
 
-// Start server
-const PORT = process.env.PORT || 4000;
-
+// Start server function
 const startServer = async () => {
   try {
     // Connect to database
     await connectDB();
 
-    // Start listening
-    app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-      logger.info(`API Docs available at http://localhost:${PORT}/api-docs`);
-      logger.info(`Health check at http://localhost:${PORT}/healthz`);
-    });
+    // Only start listening if not running as a Vercel function
+    // Vercel handles the listening part for exported apps
+    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+      const PORT = process.env.PORT || 4000;
+      app.listen(PORT, () => {
+        logger.info(`Server running on port ${PORT}`);
+        logger.info(`API Docs available at http://localhost:${PORT}/api-docs`);
+      });
+    }
   } catch (error) {
     logger.error('Failed to start server:', error);
-    process.exit(1);
+    // On Vercel, we don't want to process.exit(1) as it kills the lambda instance
+    if (!process.env.VERCEL) {
+      process.exit(1);
+    }
   }
 };
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
+// Execute startServer
 startServer();
 
 export default app;
