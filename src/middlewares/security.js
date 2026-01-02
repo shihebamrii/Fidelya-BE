@@ -34,7 +34,7 @@ const securityMiddleware = () => {
         const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean);
         allowedOrigins = (envOrigins && envOrigins.length > 0) 
           ? envOrigins 
-          : ['https://fidelya-roan.vercel.app'];
+          : [];
       } else {
         allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4000'];
       }
@@ -44,7 +44,7 @@ const securityMiddleware = () => {
         if (allowedOrigin === '*') return true;
         if (allowedOrigin === origin) return true;
         
-        // Basic regex for subdomain support if someone enters *.vercel.app
+        // Basic regex for subdomain support
         if (allowedOrigin.includes('*')) {
           const pattern = allowedOrigin.replace(/\./g, '\\.').replace(/\*/g, '.*');
           const regex = new RegExp(`^${pattern}$`);
@@ -53,18 +53,21 @@ const securityMiddleware = () => {
         return false;
       });
 
-      if (isAllowed) {
+      // Special case: Always allow Vercel subdomains in production
+      const isVercelOrigin = origin && origin.endsWith('.vercel.app');
+
+      if (isAllowed || (process.env.NODE_ENV === 'production' && isVercelOrigin)) {
         callback(null, true);
       } else {
-        // Log forbidden origins to help debug
-        console.warn(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+        console.warn(`CORS blocked origin: ${origin || 'unknown'}. Allowed: ${allowedOrigins.join(', ')}`);
         callback(null, false);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key', 'Accept', 'Origin', 'X-Requested-With'],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining'],
     credentials: true,
+    optionsSuccessStatus: 204,
     maxAge: 86400 // 24 hours
   };
   middlewares.push(cors(corsOptions));
