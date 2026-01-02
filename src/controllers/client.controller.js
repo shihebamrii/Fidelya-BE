@@ -54,12 +54,71 @@ const getDashboard = async (req, res, next) => {
       client: {
         clientId: client.clientId,
         name: client.name,
-        points: client.points
+        points: client.points,
+        isActivated: client.isActivated
       },
       business,
       availableRewards,
       transactions
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Activate client card
+ * POST /api/client/:businessSlug/:clientId/activate
+ */
+const activateClient = async (req, res, next) => {
+  try {
+    const { businessSlug, clientId } = req.params;
+    const { name, activationCode } = req.body;
+
+    if (!name || !activationCode) {
+      throw new ApiError(400, 'Name and activation code are required');
+    }
+
+    // 1. Find business
+    const business = await Business.findOne({ slug: businessSlug });
+    if (!business) {
+      throw new ApiError(404, 'Business not found');
+    }
+
+    // 2. Verify activation code
+    if (business.activationCode && business.activationCode !== activationCode) {
+      throw new ApiError(403, 'Invalid activation code');
+    }
+
+    // 3. Find client
+    const client = await Client.findOne({ 
+      businessId: business._id, 
+      clientId: clientId 
+    });
+
+    if (!client) {
+      throw new ApiError(404, 'Client not found');
+    }
+
+    if (client.isActivated) {
+      throw new ApiError(400, 'Client is already activated');
+    }
+
+    // 4. Update client
+    client.name = name;
+    client.isActivated = true;
+    await client.save();
+
+    res.json({
+      success: true,
+      message: 'Card activated successfully',
+      client: {
+        clientId: client.clientId,
+        name: client.name,
+        isActivated: client.isActivated
+      }
+    });
+
   } catch (error) {
     next(error);
   }
@@ -94,4 +153,4 @@ const getQR = async (req, res, next) => {
   }
 };
 
-export { getDashboard, getQR };
+export { getDashboard, activateClient, getQR };

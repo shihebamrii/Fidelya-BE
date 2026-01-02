@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDashboard, getQR } from '../controllers/client.controller.js';
+import { getDashboard, getQR, activateClient } from '../controllers/client.controller.js';
 import { publicLimiter } from '../middlewares/index.js';
 
 const router = Router();
@@ -64,6 +64,47 @@ router.use(publicLimiter);
  *         description: Client not found
  */
 router.get('/:businessSlug/:clientId', getDashboard);
+
+/**
+ * @swagger
+ * /api/client/{businessSlug}/{clientId}/activate:
+ *   post:
+ *     summary: Activate client card
+ *     tags: [Client]
+ *     parameters:
+ *       - in: path
+ *         name: businessSlug
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: clientId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - activationCode
+ *             properties:
+ *               name:
+ *                 type: string
+ *               activationCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Card activated successfully
+ *       400:
+ *         description: Invalid input
+ *       403:
+ *         description: Invalid activation code
+ */
+router.post('/:businessSlug/:clientId/activate', activateClient);
 
 /**
  * @swagger

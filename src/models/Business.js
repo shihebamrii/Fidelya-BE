@@ -38,6 +38,10 @@ const businessSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    activationCode: {
+      type: String,
+      trim: true
+    },
     allowNegativePoints: {
       type: Boolean,
       default: false

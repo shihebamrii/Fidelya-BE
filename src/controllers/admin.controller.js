@@ -12,7 +12,7 @@ import { escapeRegExp } from '../utils.js';
  */
 const createBusiness = async (req, res, next) => {
   try {
-    const { name, category, city, region, contactEmail, logoUrl, allowNegativePoints } = req.body;
+    const { name, category, city, region, contactEmail, logoUrl, activationCode, allowNegativePoints } = req.body;
 
     const business = await Business.create({
       name,
@@ -21,6 +21,7 @@ const createBusiness = async (req, res, next) => {
       region,
       contactEmail,
       logoUrl,
+      activationCode,
       allowNegativePoints: allowNegativePoints || false,
       createdByAdminId: req.user._id
     });
@@ -119,7 +120,7 @@ const updateBusiness = async (req, res, next) => {
     }
 
     // Allowed fields to update by admin
-    const allowedUpdates = ['name', 'category', 'city', 'region', 'contactEmail', 'logoUrl', 'allowNegativePoints', 'cardDesign'];
+    const allowedUpdates = ['name', 'category', 'city', 'region', 'contactEmail', 'logoUrl', 'activationCode', 'allowNegativePoints', 'cardDesign'];
     const sanitizedUpdates = {};
 
     Object.keys(updates).forEach(key => {
@@ -453,7 +454,8 @@ const generateClients = async (req, res, next) => {
         businessId,
         clientId,
         name: `Client ${nextNum}`,
-        points: 0
+        points: 0,
+        isActivated: false
       });
     }
 

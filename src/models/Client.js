@@ -30,6 +30,10 @@ const clientSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    isActivated: {
+      type: Boolean,
+      default: true
+    },
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
