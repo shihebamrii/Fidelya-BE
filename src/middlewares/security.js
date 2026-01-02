@@ -26,48 +26,38 @@ const securityMiddleware = () => {
   // CORS configuration
   const corsOptions = {
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
       if (!origin) return callback(null, true);
       
-      let allowedOrigins = [];
-      if (process.env.NODE_ENV === 'production') {
-        const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean);
-        allowedOrigins = (envOrigins && envOrigins.length > 0) 
-          ? envOrigins 
-          : [];
-      } else {
-        allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4000'];
-      }
+      // Allow all Vercel subdomains (frontend and potential preview deployments)
+      const isVercel = origin.endsWith('.vercel.app');
+      // Allow localhost for development
+      const isLocal = origin.startsWith('http://localhost:');
+      
+      // Check for environment-defined origins
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
+      const isExplicitlyAllowed = allowedOrigins.includes(origin);
 
-      // Support wildcard/subdomain matching or exact match
-      const isAllowed = allowedOrigins.some(allowedOrigin => {
-        if (allowedOrigin === '*') return true;
-        if (allowedOrigin === origin) return true;
-        
-        // Basic regex for subdomain support
-        if (allowedOrigin.includes('*')) {
-          const pattern = allowedOrigin.replace(/\./g, '\\.').replace(/\*/g, '.*');
-          const regex = new RegExp(`^${pattern}$`);
-          return regex.test(origin);
-        }
-        return false;
-      });
-
-      // Special case: Always allow Vercel subdomains in production
-      const isVercelOrigin = origin && origin.endsWith('.vercel.app');
-
-      if (isAllowed || (process.env.NODE_ENV === 'production' && isVercelOrigin)) {
+      if (isVercel || isLocal || isExplicitlyAllowed || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
-        console.warn(`CORS blocked origin: ${origin || 'unknown'}. Allowed: ${allowedOrigins.join(', ')}`);
+        console.warn(`CORS blocked origin: ${origin}`);
         callback(null, false);
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key', 'Accept', 'Origin', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'X-Idempotency-Key', 
+      'X-Requested-With', 
+      'Accept', 
+      'Origin',
+      'Access-Control-Allow-Origin'
+    ],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining'],
     credentials: true,
-    optionsSuccessStatus: 204,
+    optionsSuccessStatus: 200, // Some older browsers/proxies prefer 200 over 204
     maxAge: 86400 // 24 hours
   };
   middlewares.push(cors(corsOptions));

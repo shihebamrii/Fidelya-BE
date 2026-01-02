@@ -61,11 +61,6 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 // Apply security middleware (CORS, Helmet, etc.)
 securityMiddleware().forEach((middleware) => app.use(middleware));
 
-// Explicitly handle preflight OPTIONS requests early
-app.options('*', (req, res) => {
-  res.status(204).end();
-});
-
 // Body parsing
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
