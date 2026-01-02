@@ -14,7 +14,7 @@ test_output.txt
 .env
 .env.test
 .env.local
-
+.env.example
 # Editor/OS files
 .vscode/
 !.vscode/extensions.json
