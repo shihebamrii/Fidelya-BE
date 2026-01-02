@@ -1,0 +1,483 @@
+{
+	"info": {
+		"_postman_id": "loyalty-card-api",
+		"name": "Loyalty Card SaaS API",
+		"description": "Complete API collection for the Loyalty Card SaaS backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "refreshToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "businessId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "clientId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "itemId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+									"}",
+									"if (jsonData.refreshToken) {",
+									"    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@loyalty.com\",\n    \"password\": \"ChangeMe123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "refresh"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Create Business",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.business && jsonData.business._id) {",
+									"    pm.collectionVariables.set('businessId', jsonData.business._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"My Coffee Shop\",\n    \"category\": \"Cafe\",\n    \"city\": \"Paris\",\n    \"contactEmail\": \"contact@mycoffee.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/businesses",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "businesses"]
+						}
+					}
+				},
+				{
+					"name": "List Businesses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/businesses?page=1&limit=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "businesses"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "limit", "value": "20"}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Business User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"employee@business.com\",\n    \"password\": \"Employee123!\",\n    \"name\": \"John Employee\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/businesses/{{businessId}}/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "businesses", "{{businessId}}", "users"]
+						}
+					}
+				},
+				{
+					"name": "Create Client",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.client && jsonData.client.clientId) {",
+									"    pm.collectionVariables.set('clientId', jsonData.client.clientId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Jane Customer\",\n    \"phone\": \"+33612345678\",\n    \"email\": \"jane@example.com\",\n    \"initialPoints\": 50\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/businesses/{{businessId}}/clients",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "businesses", "{{businessId}}", "clients"]
+						}
+					}
+				},
+				{
+					"name": "List Clients",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/businesses/{{businessId}}/clients",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "businesses", "{{businessId}}", "clients"]
+						}
+					}
+				},
+				{
+					"name": "List All Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/admin/transactions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "admin", "transactions"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Business",
+			"item": [
+				{
+					"name": "Create Item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.item && jsonData.item._id) {",
+									"    pm.collectionVariables.set('itemId', jsonData.item._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Coffee Purchase\",\n    \"description\": \"Earn points for coffee\",\n    \"points\": 10,\n    \"type\": \"earn\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/business/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "items"]
+						}
+					}
+				},
+				{
+					"name": "List Items",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/business/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "items"]
+						}
+					}
+				},
+				{
+					"name": "Add Points (via Item)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"itemId\": \"{{itemId}}\",\n    \"note\": \"Customer purchased coffee\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/business/clients/{{clientId}}/points",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "clients", "{{clientId}}", "points"]
+						}
+					}
+				},
+				{
+					"name": "Manual Points Adjustment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pointsChange\": 25,\n    \"note\": \"Bonus points for loyalty\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/business/clients/{{clientId}}/manual",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "clients", "{{clientId}}", "manual"]
+						}
+					}
+				},
+				{
+					"name": "Get Client Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/business/clients/{{clientId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "clients", "{{clientId}}"]
+						}
+					}
+				},
+				{
+					"name": "Search Clients",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/business/clients/search?q=jane",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "clients", "search"],
+							"query": [
+								{"key": "q", "value": "jane"}
+							]
+						}
+					}
+				},
+				{
+					"name": "List Transactions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [{"key": "token", "value": "{{accessToken}}"}]
+						},
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/business/transactions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "business", "transactions"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Client (Public)",
+			"item": [
+				{
+					"name": "Get Dashboard",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/client/{{clientId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "client", "{{clientId}}"]
+						}
+					}
+				},
+				{
+					"name": "Get QR Code",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{baseUrl}}/api/client/{{clientId}}/qr",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "client", "{{clientId}}", "qr"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"url": {
+					"raw": "{{baseUrl}}/healthz",
+					"host": ["{{baseUrl}}"],
+					"path": ["healthz"]
+				}
+			}
+		}
+	]
+}
