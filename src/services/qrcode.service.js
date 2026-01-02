@@ -10,7 +10,7 @@ import QRCode from 'qrcode';
 const generateQRDataUrl = async (businessSlug, clientId, options = {}) => {
   // Generate URL pointing to client dashboard
   // Format: /:businessSlug/client/:clientId
-  const dashboardUrl = process.env.CLIENT_DASHBOARD_URL || 'http://localhost:4000';
+  const dashboardUrl = process.env.CLIENT_DASHBOARD_URL || 'https://fidelya-roan.vercel.app';
   const url = `${dashboardUrl}/${businessSlug}/client/${clientId}`;
 
   const qrOptions = {
@@ -39,7 +39,7 @@ const generateQRDataUrl = async (businessSlug, clientId, options = {}) => {
  * @returns {Promise<Buffer>} PNG buffer
  */
 const generateQRBuffer = async (businessSlug, clientId, options = {}) => {
-  const dashboardUrl = process.env.CLIENT_DASHBOARD_URL || 'http://localhost:4000';
+  const dashboardUrl = process.env.CLIENT_DASHBOARD_URL || 'https://fidelya-roan.vercel.app';
   const url = `${dashboardUrl}/${businessSlug}/client/${clientId}`;
 
   const qrOptions = {
@@ -67,7 +67,7 @@ const generateQRBuffer = async (businessSlug, clientId, options = {}) => {
  * @returns {string} Dashboard URL
  */
 const getClientDashboardUrl = (businessSlug, clientId) => {
-  const dashboardUrl = process.env.CLIENT_DASHBOARD_URL || 'http://localhost:4000';
+  const dashboardUrl = process.env.CLIENT_DASHBOARD_URL || 'https://fidelya-roan.vercel.app';
   return `${dashboardUrl}/${businessSlug}/client/${clientId}`;
 };
 
