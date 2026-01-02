@@ -17,36 +17,41 @@ const logger = winston.createLogger({
   ),
   defaultMeta: { service: 'loyalty-api' },
   transports: [
-    // Console transport
+    // Console transport - Always enable
     new winston.transports.Console({
       format: combine(
         colorize(),
         consoleFormat
       )
-    }),
-    // File transport for errors
-    new winston.transports.File({
-      filename: 'logs/error.log',
-      level: 'error',
-      format: json(),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
-    }),
-    // File transport for all logs
-    new winston.transports.File({
-      filename: 'logs/combined.log',
-      format: json(),
-      maxsize: 5242880,
-      maxFiles: 5
     })
-  ],
-  exceptionHandlers: [
-    new winston.transports.File({ filename: 'logs/exceptions.log' })
-  ],
-  rejectionHandlers: [
-    new winston.transports.File({ filename: 'logs/rejections.log' })
   ]
 });
+
+// Add file transports only if NOT on Vercel
+if (!process.env.VERCEL) {
+  logger.add(new winston.transports.File({
+    filename: 'logs/error.log',
+    level: 'error',
+    format: json(),
+    maxsize: 5242880, // 5MB
+    maxFiles: 5
+  }));
+  
+  logger.add(new winston.transports.File({
+    filename: 'logs/combined.log',
+    format: json(),
+    maxsize: 5242880,
+    maxFiles: 5
+  }));
+
+  logger.exceptions.handle(
+    new winston.transports.File({ filename: 'logs/exceptions.log' })
+  );
+
+  logger.rejections.handle(
+    new winston.transports.File({ filename: 'logs/rejections.log' })
+  );
+}
 
 // Create Morgan stream that writes to Winston
 const morganStream = {

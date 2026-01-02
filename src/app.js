@@ -71,14 +71,14 @@ app.use(morganMiddleware);
 // Rate limiting (general)
 app.use(generalLimiter);
 
-// Swagger UI - Only in non-production
+// Swagger UI - Only in non-production and NOT on Vercel if possible, or loaded conditionally
 if (process.env.NODE_ENV !== 'production') {
+  const swaggerSpec = swaggerJsdoc(swaggerOptions);
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: 'Loyalty Card API Docs'
   }));
 
-  // Swagger JSON endpoint
   app.get('/api-docs.json', (req, res) => {
     res.json(swaggerSpec);
   });
@@ -87,7 +87,8 @@ if (process.env.NODE_ENV !== 'production') {
 // Middleware to ensure DB connection (Lazy connection for serverless)
 let dbConnected = false;
 app.use(async (req, res, next) => {
-  if (req.path === '/healthz') return next();
+  // Pass through if health check or preflight
+  if (req.path === '/healthz' || req.method === 'OPTIONS') return next();
   
   if (!dbConnected) {
     try {
@@ -96,12 +97,9 @@ app.use(async (req, res, next) => {
       next();
     } catch (error) {
       logger.error('Database connection failed in middleware:', error);
-      // Don't call next(error) if we want to custom handle or just let it time out
-      // On Vercel, it's better to report the error properly
       res.status(503).json({
         status: 'error',
-        message: 'Service Temporarily Unavailable (Database Connection Failed)',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        message: 'Database connection failed. Please ensure MONGODB_URI is set correctly.',
       });
     }
   } else {
@@ -109,13 +107,14 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Health check endpoint (moved up to avoid DB dependency for basic health)
+// Health check endpoint
 app.get('/healthz', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    dbConnected
+    dbConnected,
+    env: process.env.NODE_ENV
   });
 });
 
@@ -133,14 +132,13 @@ app.use(errorHandler);
 
 // Start server function (for local dev)
 const startServer = async () => {
-  if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  if (!process.env.VERCEL) {
     try {
       await connectDB();
       dbConnected = true;
       const PORT = process.env.PORT || 4000;
       app.listen(PORT, () => {
         logger.info(`Server running on port ${PORT}`);
-        logger.info(`API Docs available at http://localhost:${PORT}/api-docs`);
       });
     } catch (error) {
       logger.error('Failed to start server:', error);
@@ -149,7 +147,6 @@ const startServer = async () => {
   }
 };
 
-// Execute startServer (won't block export)
 startServer();
 
 export default app;
