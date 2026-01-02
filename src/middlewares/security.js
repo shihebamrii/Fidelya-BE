@@ -26,19 +26,19 @@ const securityMiddleware = () => {
   // CORS configuration
   const corsOptions = {
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or same-origin)
-      if (!origin) return callback(null, true);
+      // In production, vercel.json handles headers, but we keep this as a secondary layer
+      const allowedOrigins = [
+        'https://fidelya-roan.vercel.app',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:4000',
+        'http://localhost:5174'
+      ];
       
-      // Allow all Vercel subdomains (frontend and potential preview deployments)
-      const isVercel = origin.endsWith('.vercel.app');
-      // Allow localhost for development
-      const isLocal = origin.startsWith('http://localhost:');
-      
-      // Check for environment-defined origins
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
-      const isExplicitlyAllowed = allowedOrigins.includes(origin);
+      const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || [];
+      const allAllowed = [...allowedOrigins, ...envOrigins];
 
-      if (isVercel || isLocal || isExplicitlyAllowed || allowedOrigins.includes('*')) {
+      if (!origin || allAllowed.includes(origin) || origin.endsWith('.vercel.app') || allAllowed.includes('*')) {
         callback(null, true);
       } else {
         console.warn(`CORS blocked origin: ${origin}`);
@@ -46,19 +46,10 @@ const securityMiddleware = () => {
       }
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type', 
-      'Authorization', 
-      'X-Idempotency-Key', 
-      'X-Requested-With', 
-      'Accept', 
-      'Origin',
-      'Access-Control-Allow-Origin'
-    ],
-    exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
     credentials: true,
-    optionsSuccessStatus: 200, // Some older browsers/proxies prefer 200 over 204
-    maxAge: 86400 // 24 hours
+    optionsSuccessStatus: 200,
+    maxAge: 86400
   };
   middlewares.push(cors(corsOptions));
 
